@@ -1,0 +1,13 @@
+/ {
+  aliases {
+      pir = &pir0;
+  };
+
+  pir{
+    compatible = "gpio-keys";
+    pir0: pir0 {
+      gpios = <&gpio1 7 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+      label = "PIR Sensor";
+    };
+  };
+};
