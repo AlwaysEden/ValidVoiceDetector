@@ -1,0 +1,34 @@
+/ {
+    aliases {
+        pir = &pir0;
+        gpio-clk = &gpioclk;
+        gpio-dio = &gpiodio;
+    };
+
+    gpiocustom{
+      status = "okay";
+      compatible = "gpio-keys";
+  
+      gpioclk: gpioclk{
+        gpios = <&gpio1 12 GPIO_ACTIVE_HIGH>;
+        label = "gpioclk P1.12";
+      };
+  
+      gpiodio: gpiodio{
+        gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
+        label = "gpiodio P1.13";
+      };
+    };
+
+    pir{
+      compatible = "gpio-keys";
+      pir0: pir0 {
+        gpios = <&gpio1 7 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+        label = "PIR Sensor";
+      };
+    };
+};
+
+&spi3 {
+	status = "disabled";
+};
