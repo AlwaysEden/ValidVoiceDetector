@@ -19,6 +19,7 @@
 #include "value.h"
 #include "led.h"
 
+K_THREAD_STACK_DEFINE(thread_stack, 1024);
 
 //PIR Define
 /* 1000 msec = 1 sec */
@@ -70,7 +71,7 @@ long map(long x, long in_min, long in_max, long out_min, long out_max)
 
 //************************************ */
 
-void soundSensor_Start(){
+void soundSensor_Start(void *arg1, void *arg2, void *arg3){
 	uint16_t buf;
 	uint32_t sound_value = 0;
 	int err;
@@ -110,11 +111,15 @@ void soundSensor_Start(){
 		prev_sound_level = currunt_sound_level;
 	}
 	current_time = k_uptime_get(); 
-	if( (current_time-start_time)>= (3*1000)) break;
+	if( (current_time-start_time)>= (3*1000)){
+		printk("Sound Sensor Break\n");
+		led_off_all();
+		break;
+	}
 	k_sleep(K_MSEC(100));
 	// led_off_all();
-
 	}
+	k_thread_abort(k_current_get());
 }
 
 void pir_init(void)
@@ -152,6 +157,12 @@ void asm_pir_init(){
 	);
 }
 
+void battery_led_on(){
+	for (uint8_t level = 0; level <= 7; level++) {
+    display_level(level);
+  }
+}
+
 int main(void)
 {
 	int ret;
@@ -173,19 +184,24 @@ int main(void)
 	}
 	//**************SoundSensor************
 	asm_pir_init();
-
 	set_brightness(BRIGHTNESS_LEVEL1);
   display_clear();
+	struct k_thread sound_thread_data;
+
 	printk("Done with Configure\n");
 	while (1) {
 		// printk("Running\n");
 		if (motion_detected) {
+			k_tid_t sound_thread = k_thread_create(&sound_thread_data, thread_stack,
+                                 K_THREAD_STACK_SIZEOF(thread_stack),
+                                 soundSensor_Start, NULL, NULL, NULL,
+                                 5, 0, K_NO_WAIT);
+
+			k_thread_start(sound_thread);
 			// soundSensor_Start();
 			printk("PIR sensor value: %d\n", val);
-			for (uint8_t level = 0; level <= 7; level++) {
-        display_level(level);
-        k_sleep(K_MSEC(500)); // Display each level for 500 milliseconds
-      }
+			battery_led_on();
+			k_thread_join(&sound_thread_data, K_FOREVER);
 			display_clear();
 			motion_detected = false;
 			k_sleep(K_MSEC(100));
