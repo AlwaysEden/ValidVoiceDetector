@@ -70,8 +70,6 @@ long map(long x, long in_min, long in_max, long out_min, long out_max)
 
 //************************************ */
 
-extern void asm_pir_init();
-
 void soundSensor_Start(){
 	uint16_t buf;
 	uint32_t sound_value = 0;
@@ -121,10 +119,6 @@ void soundSensor_Start(){
 
 void pir_init(void)
 {
-		// __asm volatile(
-		// 	"PUSH {LR}\t\n"
-		// );
-
     int rc;
 
     if (!device_is_ready(pir.port)) {
@@ -147,17 +141,17 @@ void pir_init(void)
     gpio_init_callback(&pir_cb_data, pir_detected, BIT(pir.pin));
     gpio_add_callback(pir.port, &pir_cb_data);
     LOG_INF("PIR sensor initialized and callback set");
-		// __asm volatile(
-		// 	"POP {LR}\t\n"
-		// );
 }
 
 void asm_pir_init(){
 	__asm volatile(
+			"PUSH {LR}\t\n"
 			"BL pir_init\t\n"
-			"bx lr\t\n"
+			"POP {LR}\t\n"
+			"BX LR\t\n"
 	);
 }
+
 int main(void)
 {
 	int ret;
@@ -178,17 +172,13 @@ int main(void)
 		}
 	}
 	//**************SoundSensor************
-	printk("Previous asm_pir_init\n");
-	//**PIR**/
-	// asm_pir_init();
-	pir_init();
-	//*******
+	asm_pir_init();
 
 	set_brightness(BRIGHTNESS_LEVEL1);
   display_clear();
 	printk("Done with Configure\n");
 	while (1) {
-		printk("Running\n");
+		// printk("Running\n");
 		if (motion_detected) {
 			// soundSensor_Start();
 			printk("PIR sensor value: %d\n", val);
