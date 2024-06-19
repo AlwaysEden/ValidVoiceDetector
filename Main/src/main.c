@@ -18,20 +18,20 @@
 #include "pir.h"
 #include "value.h"
 #include "led.h"
+#include "co2.h"
 
-
-//PIR Define
+// PIR Define
 /* 1000 msec = 1 sec */
 #define SLEEP_TIME_MS   1000
 #define PIR_NODE DT_ALIAS(pir)
 LOG_MODULE_REGISTER(pir);
 
-//Sound Sensor Define
+// Sound Sensor Define
 #define MAX_SENSORVALUE 1000
 #define MIN_SENSORVALUE 16
 #define SENSOR_INVALID_VALUE 65500
 
-//******* PIR Setting *******
+/* ****** PIR Setting ****** */
 #if DT_NODE_HAS_STATUS(PIR_NODE, okay)
 static const struct gpio_dt_spec pir = GPIO_DT_SPEC_GET(PIR_NODE, gpios);
 static struct gpio_callback pir_cb_data;
@@ -45,10 +45,9 @@ void pir_detected(const struct device *dev, struct gpio_callback *cb, uint32_t p
 #else
 #error "PIR sensor is not defined in the device tree"
 #endif
-//***************************
+/* ************************* */
 
-
-//******* Sound Sensor Setting *******
+/* ****** Sound Sensor Setting ****** */
 #if !DT_NODE_EXISTS(DT_PATH(zephyr_user)) || \
 	!DT_NODE_HAS_PROP(DT_PATH(zephyr_user), io_channels)
 #error "No suitable devicetree overlay specified"
@@ -67,8 +66,16 @@ long map(long x, long in_min, long in_max, long out_min, long out_max)
 {
         return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
+/* *********************************** */
 
-//************************************ */
+/* ****** Co2 Setting (for thread) ****** */
+#define CO2_THREAD_STACK_SIZE 1024
+#define CO2_THREAD_PRIORITY 5
+
+K_THREAD_STACK_DEFINE(co2_thread_stack, CO2_THREAD_STACK_SIZE);
+struct k_thread co2_thread_data;
+k_tid_t co2_thread_id;
+extern int glob_ppm;
 
 void soundSensor_Start(){
 	uint16_t buf;
@@ -110,10 +117,9 @@ void soundSensor_Start(){
 		prev_sound_level = currunt_sound_level;
 	}
 	current_time = k_uptime_get(); 
-	if( (current_time-start_time)>= (3*1000)) break;
+	if( (current_time-start_time) >= (3*1000)) break;
 	k_sleep(K_MSEC(100));
 	// led_off_all();
-
 	}
 }
 
@@ -157,7 +163,7 @@ int main(void)
 	int ret;
 	int err;
 
-	//******* Sound Sensor Setting *******
+	/* ****** Sound Sensor Setting ****** */
 	/* Configure channels individually prior to sampling. */
 	for (size_t i = 0U; i < ARRAY_SIZE(adc_channels); i++) {
 		if (!adc_is_ready_dt(&adc_channels[i])) {
@@ -171,25 +177,39 @@ int main(void)
 			return 0;
 		}
 	}
-	//**************SoundSensor************
+	/* *********** Sound Sensor ************/
 	asm_pir_init();
+	co2_init();
+
 
 	set_brightness(BRIGHTNESS_LEVEL1);
-  display_clear();
+    display_clear();
 	printk("Done with Configure\n");
+
 	while (1) {
 		// printk("Running\n");
 		if (motion_detected) {
 			// soundSensor_Start();
 			printk("PIR sensor value: %d\n", val);
 			for (uint8_t level = 0; level <= 7; level++) {
-        display_level(level);
-        k_sleep(K_MSEC(500)); // Display each level for 500 milliseconds
-      }
+				display_level(level);
+				k_sleep(K_MSEC(500)); // Display each level for 500 milliseconds
+			}
 			display_clear();
 			motion_detected = false;
+			co2_thread_id = k_thread_create(&co2_thread_data, co2_thread_stack,
+                    K_THREAD_STACK_SIZEOF(co2_thread_stack),
+                    (k_thread_entry_t) co2_thread,
+                    NULL, NULL, NULL,
+                    CO2_THREAD_PRIORITY, 0, K_NO_WAIT);
+			
+			k_thread_start(co2_thread_id);
+			
+			k_thread_join(&co2_thread_data, K_FOREVER);
+			
 			k_sleep(K_MSEC(100));
 		}
 	}
+
 	return 0;
 }
