@@ -6,28 +6,30 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
-#include <zephyr/logging/log.h>
-#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/uart.h>
-#include <zephyr/drivers/kscan.h>
+
 #include <string.h>
+
 
 #define RECEIVE_TIMEOUT 1000
 
 #define MSG_SIZE 9
 #define CO2_MULTIPLIER 256
 
-LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
-
-// K_MSGQ_DEFINE(uart_msgq, MSG_SIZE, 10, 4);
+/* queue to store up to 10 messages (aligned to 4-byte boundary) */
+K_MSGQ_DEFINE(uart_msgq, MSG_SIZE, 10, 4);
 
 static const struct device *const uart_serial = DEVICE_DT_GET(DT_N_ALIAS_myserial);
+int current_ppm;
+int average_ppm = 5000;
+int average_on = 0;
+
 
 /* receive buffer used in UART ISR callback */
 static char rx_buf[MSG_SIZE];
-static int rx_buf_pos=0;
+static int rx_buf_pos;
 
-enum uart_fsm_state_code {
+enum uart_fsm_code {
 	UART_FSM_IDLE,
 	UART_FSM_HEADER,
 	UART_FSM_DATA,
@@ -35,53 +37,58 @@ enum uart_fsm_state_code {
 	UART_FSM_END,
 };
 
-static uint8_t uart_fsm_state = UART_FSM_IDLE; // reset
+static uint8_t uart_fsm = UART_FSM_IDLE;
 
-uint8_t check_uart_fsm(uint8_t reset, uint8_t read_data) {
-	if(reset)
-	   uart_fsm_state = UART_FSM_IDLE;
-	else 
-	    switch (uart_fsm_state) {
+uint8_t check_usart_fsm(uint8_t read_data) {
+	switch (uart_fsm) {
 		case UART_FSM_IDLE:
 			if (read_data == 0xFF) {
-				uart_fsm_state = UART_FSM_HEADER;
+				uart_fsm = UART_FSM_HEADER;
 			}
 			break;
 		case UART_FSM_HEADER:
 			if (read_data == 0x86) {
-				uart_fsm_state = UART_FSM_DATA;
+				uart_fsm = UART_FSM_DATA;
 			} else {
-				uart_fsm_state = UART_FSM_IDLE;
+				uart_fsm = UART_FSM_IDLE;
 			}
 			break;
 		case UART_FSM_DATA:
 			if (rx_buf_pos == MSG_SIZE - 2) {
-				uart_fsm_state = UART_FSM_CHECKSUM;
+				uart_fsm = UART_FSM_CHECKSUM;
 			}
 			break;
 		case UART_FSM_CHECKSUM:
 			if (rx_buf_pos == MSG_SIZE - 1) {
-				uart_fsm_state = UART_FSM_END;
+				uart_fsm = UART_FSM_END;
 			}
 			break;
 		case UART_FSM_END:
-			uart_fsm_state = UART_FSM_IDLE;
+			uart_fsm = UART_FSM_IDLE;
 			break;
 		default:
-			uart_fsm_state = UART_FSM_IDLE;
+			uart_fsm = UART_FSM_IDLE;
 			break;
 	}
-	return uart_fsm_state;
+	return uart_fsm;
 }
 
-unsigned char getCheckSum(char *packet) {
-	unsigned char i, checksum=0;
+
+char getCheckSum(char *packet) {
+	char i, checksum;
 	for( i = 1; i < 8; i++) {
 		checksum += packet[i];
 	}
 	checksum = 0xff - checksum;
 	checksum += 1;
 	return checksum;
+}
+
+uint8_t fromHexadecimalToDecimal(uint8_t hexadecimalValue) {
+	uint8_t decimalValue = 0;
+	decimalValue += hexadecimalValue / 10 * 16;
+	decimalValue += hexadecimalValue % 10;
+	return decimalValue;
 }
 
 /**
@@ -96,22 +103,21 @@ void serial_callback(const struct device *dev, void *user_data) {
 	int checksum;
 
 	if (!uart_irq_update(uart_serial)) {
-		printk("irq_update Error\n");
 		return;
 	}
 
 	if (!uart_irq_rx_ready(uart_serial)) {
-		printk("irq_ready: No data\n");
+		printk("No data\n");
 		return;
 	}
 
 	/* read until FIFO empty */
 	while (uart_fifo_read(uart_serial, &c, 1) == 1) {
 		// for recovery
-		if (uart_fsm_state == UART_FSM_IDLE) {
+		if (uart_fsm == UART_FSM_IDLE) {
 			rx_buf_pos = 0;
 		}
-		check_uart_fsm(0,c);
+		check_usart_fsm(c);
 
 		if (rx_buf_pos >= MSG_SIZE) {
 			rx_buf_pos = 0;
@@ -120,30 +126,28 @@ void serial_callback(const struct device *dev, void *user_data) {
 	}
 
 	// calculate checksum, and compare with received checksum
-	if(uart_fsm_state == UART_FSM_END){
-	  checksum = getCheckSum(rx_buf);
-	  checksum_ok = (checksum == rx_buf[8]);
-	  if (checksum_ok) {
-		printk("Checksum OK (%d == %d, index=%d)\n", checksum, rx_buf[8], rx_buf_pos);
-	 
-	    // check if we received all data and checksum is OK
-	    value_calc_flag = (rx_buf_pos == MSG_SIZE);
-	    if (value_calc_flag) {
-		  high = rx_buf[2];
-		  low = rx_buf[3];
-		  int ppm = (high * CO2_MULTIPLIER) + low;
-		  printk("CO2: %d ppm (high = %d, low = %d)\n", ppm , high, low);
-		  // print message buffer
-		  for (int i = 0; i < MSG_SIZE; i+=1) {
-			printk("%x ", rx_buf[i]);
-		  }
-		  printk("\n");
-		}
-	  } 
-	  else {
-		printk("Checksum failed (%d == %d, index=%d)\n", checksum, rx_buf[8], rx_buf_pos);
-	  }
-	  check_uart_fsm(1,0); // reset
+	checksum = getCheckSum(rx_buf);
+	checksum_ok = checksum == rx_buf[8];
+	if (checksum_ok) {
+		// printk("Checksum OK (%d == %d, index=%d)\n", checksum, rx_buf[8], rx_buf_pos);
+	} else {
+		// printk("Checksum failed (%d == %d, index=%d)\n", checksum, rx_buf[8], rx_buf_pos);
+	}
+
+	// check if we received all data and checksum is OK
+	value_calc_flag = rx_buf_pos == MSG_SIZE && checksum_ok;
+	if (value_calc_flag) {
+		high = rx_buf[2];
+		high = fromHexadecimalToDecimal(high);
+		low = rx_buf[3];
+		low = fromHexadecimalToDecimal(low);
+		current_ppm = (high * CO2_MULTIPLIER) + low;
+		printk("CO2: %d ppm (aver:%d)\n", current_ppm, average_ppm);
+		// print message buffer
+		// for (int i = 0; i < MSG_SIZE; i+=1) {
+		// 	printk("%x ", rx_buf[i]);
+		// }
+		// printk("\n");
 	}
 }
 
@@ -176,7 +180,7 @@ int main(void) {
 	uart_irq_rx_enable(uart_serial);
 
 	while (1) {
-		k_sleep(K_MSEC(5000));
+		k_sleep(K_MSEC(300));
 		serial_write();
 	}
 }

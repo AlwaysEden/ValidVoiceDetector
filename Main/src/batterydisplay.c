@@ -101,7 +101,7 @@ int display_level(uint8_t level)
     }
 
     set_level(level);
-    printk("display_level: %d\n", level);
+    // printk("display_level: %d\n", level);
 
     start();
     write_byte(ADDR_FIXED);
@@ -116,7 +116,7 @@ int display_level(uint8_t level)
     write_byte(cmd_dispctrl);
     stop();
 
-    printk("display_level success\n");
+    // printk("display_level success\n");
 
     return DK_OK;
 }

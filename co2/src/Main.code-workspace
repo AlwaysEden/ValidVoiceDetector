@@ -1,0 +1,31 @@
+{
+	"folders": [
+		{
+			"path": "../../../MicroProcesser/Main"
+		},
+		{
+			"name": "Main",
+			"path": "../../Main"
+		},
+		{
+			"name": "pir_batterydisplay",
+			"path": "../../pir_batterydisplay"
+		},
+		{
+			"name": "co2",
+			"path": ".."
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"array": "c",
+			"*.tcc": "c",
+			"functional": "c",
+			"ostream": "c",
+			"streambuf": "c",
+			"*.inc": "c",
+			"device.h": "c"
+		},
+		"nrf-connect.applications": []
+	}
+}
