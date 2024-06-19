@@ -1,0 +1,11 @@
+# editors
+*.swp
+*~
+
+# build
+/build*/
+
+# macos
+.DS_Store
+.AppleDouble
+.LSOverride
