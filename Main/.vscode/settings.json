@@ -1,0 +1,10 @@
+{
+  "files.associations": {
+    "array": "c",
+    "*.tcc": "c",
+    "functional": "c",
+    "ostream": "c",
+    "streambuf": "c",
+    "*.inc": "c"
+  }
+}

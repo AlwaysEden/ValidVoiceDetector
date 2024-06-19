@@ -1,0 +1,62 @@
+/ {
+	aliases {
+		pir = &pir0;
+		gpio-clk = &gpioclk;
+		gpio-dio = &gpiodio;
+	};
+
+	gpiocustom{
+		status = "okay";
+		compatible = "gpio-keys";
+
+		gpioclk: gpioclk{
+			gpios = <&gpio1 12 GPIO_ACTIVE_HIGH>;
+			label = "gpioclk P1.12";
+		};
+
+		gpiodio: gpiodio{
+			gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
+			label = "gpiodio P1.13";
+		}; 
+	};
+
+  pir{
+    compatible = "gpio-keys";
+    pir0: pir0 {
+      gpios = <&gpio1 7 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+      label = "PIR Sensor";
+    };
+  };
+  zephyr,user {
+    io-channels = <&adc 4>;
+	};
+};
+
+&adc {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@4 {
+		reg = <4>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,input-positive = <NRF_SAADC_AIN4>; /* P0.28 */
+		zephyr,resolution = <10>;
+	};
+};
+
+&i2c0 {
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+
+	ht16k33@70 {
+		compatible = "holtek,ht16k33";
+		reg = <0x70>;
+        /* Uncomment to use IRQ instead of polling: */
+		/* irq-gpios = <&gpio1 8 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; */
+
+		keyscan {
+			compatible = "holtek,ht16k33-keyscan";
+		};
+	};
+};
