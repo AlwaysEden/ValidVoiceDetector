@@ -1,0 +1,12 @@
+{
+	"folders": [
+		{
+			"path": "../../../../blinky_1"
+		},
+		{
+			"name": "soundsensor_example",
+			"path": "."
+		}
+	],
+	"settings": {}
+}
