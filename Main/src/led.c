@@ -178,6 +178,8 @@ void led_on_idx(int btn_flag, int current_idx)
             num_arr_idx++;
             }
         }
+        k_sleep(K_MSEC(500));
+        led_off_all();
     }else if(btn_flag == 2){
         for(int i = 0; i <= 15; i++){
             led_on(led,i); //1

@@ -58,7 +58,7 @@ void blink_led(struct k_work *work)
 
 void button0_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
-    printk("Button 0 pressed\n");
+    // printk("Button 0 pressed\n");
     btn_flag = 0;
     if (!led0_blinking) {
         led0_blinking = true;
@@ -69,7 +69,7 @@ void button0_callback(const struct device *dev, struct gpio_callback *cb, uint32
 
 void button1_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
-    printk("Button 1 pressed\n");
+    // printk("Button 1 pressed\n");
     btn_flag = 1; 
     if (!led1_blinking) {
         led1_blinking = true;
@@ -80,7 +80,7 @@ void button1_callback(const struct device *dev, struct gpio_callback *cb, uint32
 
 void button2_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
-    printk("Button 2 pressed\n");
+    // printk("Button 2 pressed\n");
     btn_flag = 2;
     if (!led2_blinking) {
         led2_blinking = true;
@@ -91,7 +91,7 @@ void button2_callback(const struct device *dev, struct gpio_callback *cb, uint32
 
 void button3_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
-    printk("Button 3 pressed\n");
+    // printk("Button 3 pressed\n");
     btn_flag = 3;
     if (!led3_blinking) {
         led3_blinking = true;
@@ -122,7 +122,7 @@ int gpio_init(void)
                        NULL);
 
     // Set button0 interrupt
-    printk("Setting button0 interrupt\n");
+    // printk("Setting button0 interrupt\n");
 
     err = gpio_is_ready_dt(&button0);
     if (!err) {
@@ -145,7 +145,7 @@ int gpio_init(void)
     gpio_add_callback(button0.port, &button0_cb_data);
 
     // Set button1 interrupt
-    printk("Setting button1 interrupt\n");
+    // printk("Setting button1 interrupt\n");
     err = gpio_is_ready_dt(&button1);
     if (!err) {
         printk("Error gpio_is_ready_dt led1 pin %d\n", err);
@@ -167,7 +167,7 @@ int gpio_init(void)
     gpio_add_callback(button1.port, &button1_cb_data);
 
     // Set button2 interrupt
-    printk("Setting button2 interrupt\n");
+    // printk("Setting button2 interrupt\n");
     err = gpio_is_ready_dt(&button2);
     if (!err) {
         printk("Error gpio_is_ready_dt led2 pin %d\n", err);
@@ -189,7 +189,7 @@ int gpio_init(void)
     gpio_add_callback(button2.port, &button2_cb_data);
 
     // Set button3 interrupt
-    printk("Setting button3 interrupt\n");
+    // printk("Setting button3 interrupt\n");
     err = gpio_is_ready_dt(&button3);
     if (!err) {
         printk("Error gpio_is_ready_dt led3 pin %d\n", err);

@@ -51,7 +51,7 @@ void pir_detected(const struct device *dev, struct gpio_callback *cb, uint32_t p
 K_THREAD_STACK_DEFINE(sound_thread_stack, 1024);
 k_tid_t sound_thread_id;
 
-#define MAX_SENSORVALUE 1000
+#define MAX_SENSORVALUE 1023
 #define MIN_SENSORVALUE 15
 #define SENSOR_INVALID_VALUE 65500
 #if !DT_NODE_EXISTS(DT_PATH(zephyr_user)) || \
@@ -71,6 +71,13 @@ static const struct adc_dt_spec adc_channels[] = {
 long map(long x, long in_min, long in_max, long out_min, long out_max)
 {
         return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+}
+
+long minimize64(long x){
+	return x*64/1023;
+}
+long minimize15(long x){
+	return x*15/1023;
 }
 /* *********************************** */
 
@@ -112,17 +119,25 @@ void soundSensor_Start(void *arg1, void *arg2, void *arg3){
 			k_sleep(K_MSEC(50));
 			continue;
 		}
-		current_sound_level = map(sound_value, 0, MAX_SENSORVALUE, 0, MIN_SENSORVALUE);
-		printk("sound_level : %d\n", current_sound_level);
+		// if(btn_flag == 1){
+			// current_sound_level = minimize64(sound_value);
+		// }else{
+			current_sound_level = map(sound_value, 0, MAX_SENSORVALUE, 0, MIN_SENSORVALUE);
+			// current_sound_level = minimize15(sound_value);
 
-		if(current_sound_level <= 4){
+
+		// }
+
+		printk("sound_value : %d current: %d\n", sound_value,current_sound_level);
+
+		if(btn_flag==0 &&current_sound_level <= 4){
 			k_sleep(K_MSEC(100));
 			continue;
 		}else {
 			led_on_idx(btn_flag, current_sound_level);
 		}
 		if(average_ppm == -1){
-				printk("Sound Sensor Break\n");
+				// printk("Sound Sensor Break\n");
 				led_off_all();
 				break;
 		}
@@ -182,6 +197,7 @@ int main(void)
 		printk("Error gpio_init %d\n", err);
 		return 0;
 	}
+	display_clear();
 
 	/* ****** Sound Sensor Setting ****** */
 	/* Configure channels individually prior to sampling. */
@@ -201,10 +217,9 @@ int main(void)
 	asm_pir_init();
 	set_brightness(BRIGHTNESS_LEVEL1);
 	co2_init();
-  display_clear();
 	struct k_thread sound_thread_data;
 
-	printk("Done with Configure\n");
+	// printk("Done with Configure\n");
 
 	while (1) {
 		// printk("Running\n");

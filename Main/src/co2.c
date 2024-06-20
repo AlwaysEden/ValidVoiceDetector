@@ -168,7 +168,7 @@ void co2_thread(void) {
     while (1) {
         co2_read();
         k_sleep(K_MSEC(500));
-        printk("cur_ppm: %d vs aver_ppm: %d\n",current_ppm, average_ppm);
+        // printk("cur_ppm: %d vs aver_ppm: %d\n",current_ppm, average_ppm);
         if(current_ppm <= 0) continue;
         if (current_ppm <= average_ppm) {
             // OUT
@@ -177,12 +177,12 @@ void co2_thread(void) {
                 average_ppm = - 1;
                 break;
             }
-            printk("Current PPM is Less than average %d %d\n",after_higher, stop_signal);
+            // printk("Current PPM is Less than average %d %d\n",after_higher, stop_signal);
         } else {
             // IN
             stop_signal = 0;
             after_higher = 1;
-            printk("Current PPM is Greater than average %d %d\n", after_higher, stop_signal);
+            // printk("Current PPM is Greater than average %d %d\n", after_higher, stop_signal);
         }
         if(average_on){
             average_ppm = average_ppm + current_ppm + 20;
