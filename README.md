@@ -22,15 +22,18 @@
 2-4. Press Build Configuration   
 
 ## About
-### Developer
+#### Developer
+****
 >하정원   
 >&emsp;한동대학교 전산전자공학부 hajeongwon77@gmail.com   
 >한나린   
 >&emsp;한동대학교 전산전자공학부 lynnie21@handong.ac.kr   
-### Open Source Code
+#### Open Source Code
+****
 https://github.com/UmileVX/IoT-Development-with-Nordic-Zephyr
 Sensor에 관한 대부분의 코드는 위 깃허브의 예제 코드를 참고했습니다.
-### Project Workspace
+#### Project Workspace
+****
 .   
 ├── CMakeLists.txt   
 ├── LICENSE   
