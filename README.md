@@ -49,5 +49,3 @@ Sensor에 관한 대부분의 코드는 위 깃허브의 예제 코드를 참고
 &emsp;&emsp;&emsp;├── main.c   
 &emsp;&emsp;&emsp;├── pir.h   
 &emsp;&emsp;&emsp;└── value.h   
-
-프로젝트의 소스코드 리스트, 빌드하는 방법, 소스 작성자 정보 및 날짜, 다운로드받아 사용한 오픈소스 정보, 본인들의 copyright 정보가 포함된 텍스트화일, 프로젝트 workspace 루트
