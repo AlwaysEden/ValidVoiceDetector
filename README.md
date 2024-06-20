@@ -15,18 +15,18 @@
 
 ## How to Build
 1. nRF Connect로 해당 프로젝트를 Open한다.
-2. Add Build Configuration를 눌러 Build환경을 설정한다. </b>
-2-1. Board: nrf52840dk_nrf52840 </b>
-2-2. configuration: prj.conf </b>
-2-3. DeviceTree Overlay: nrf52840_nrf52840.overlay </b>
-2-4. Press Build Configuration </b>
+2. Add Build Configuration를 눌러 Build환경을 설정한다.   
+2-1. Board: nrf52840dk_nrf52840   
+2-2. configuration: prj.conf   
+2-3. DeviceTree Overlay: nrf52840_nrf52840.overlay   
+2-4. Press Build Configuration   
 
 ## About
 ### Developer
 하정원
-- 한동대학교 전산전자공학부 hajeongwon77@gmail.com
+- 한동대학교 전산전자공학부 hajeongwon77@gmail.com   
 한나린
-- 한동대학교 전산전자공학부 lynnie21@handong.ac.kr
+- 한동대학교 전산전자공학부 lynnie21@handong.ac.kr   
 ### Open Source Code
 https://github.com/UmileVX/IoT-Development-with-Nordic-Zephyr
 Sensor에 관한 대부분의 코드는 위 깃허브의 예제 코드를 참고했습니다.
