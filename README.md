@@ -1,5 +1,5 @@
 # ValidSoundDetector
-
+자세한 사항은 Report-Microprocessor.pdf를 읽어주시기 바랍니다.   
 ## Source Code List
 - Main/src/batterydisplay.c
 - Main/src/batterydisplay.h
